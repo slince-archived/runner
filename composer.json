@@ -19,9 +19,14 @@
         "guzzlehttp/guzzle": "~6.2",
         "slince/event": "*",
         "slince/cache": "*@dev",
+        "slince/config": "*@dev",
         "symfony/filesystem": "~3.0",
         "symfony/console": "~3.0",
-        "webmozart/assert": "*"
+        "webmozart/assert": "*",
+        "cakephp/utility": "*"
     },
+    "bin": [
+        "runner"
+    ],
     "minimum-stability": "stable"
 }

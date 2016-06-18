@@ -17,7 +17,7 @@ abstract class AbstractAssertion implements AssertionInterface
      */
     protected $response;
 
-    function execute(Response $response)
+    function setResponse(Response $response)
     {
         $this->response = $response;
     }

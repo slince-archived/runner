@@ -5,6 +5,7 @@
  */
 namespace Slince\Runner\Assertion;
 
+use Cake\Utility\Hash;
 use GuzzleHttp\Psr7\Response;
 use Slince\Runner\Exception\InvalidArgumentException;
 
@@ -62,11 +63,57 @@ class BodyAssertion extends AbstractAssertion
     function json()
     {
         if (empty($this->json)) {
-            $this->json = json_decode($this->body);
+            $this->json = json_decode($this->body, true);
             if (json_last_error == JSON_ERROR_NONE) {
                 throw new InvalidArgumentException(sprintf("Invalid Json Format"));
             }
         }
         return $this->json;
+    }
+
+    /**
+     * 获取指定参数
+     * @param $name
+     * @return mixed
+     */
+    function getParameter($name)
+    {
+        return Hash::get($this->json(), $name);
+    }
+    /**
+     * 判断存在指定参数
+     * @param $name
+     * @return bool
+     */
+    function hasParameter($name)
+    {
+        return Hash::get($this->json(), $name, false) != false;
+    }
+
+    /**
+     * 指定参数等于
+     * @param $name
+     * @param $value
+     * @return bool
+     */
+    function parameterEqual($name, $value)
+    {
+        $parameter = $this->getParameter($name);
+        if (!is_null($parameter)) {
+            return $parameter == $value;
+        }
+        return false;
+    }
+
+    /**
+     * 参数符合正则约束
+     * @param $name
+     * @param $pattern
+     * @return mixed
+     */
+    function parameterRegex($name, $pattern)
+    {
+        $parameter = $this->getParameter($name);
+        return preg_match("#{$pattern}#", Hash::get($this->json(), $parameter));
     }
 }

@@ -6,7 +6,9 @@
 namespace Slince\Runner;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use Slince\Cache\ArrayCache;
+use Slince\Runner\Exception\RuntimeException;
 
 class Runner
 {
@@ -48,6 +50,7 @@ class Runner
     {
         $this->examinationChain = $examinationChain;
         $this->arguments = new ArrayCache();
+        $this->httpClient = new Client();
     }
 
     /**
@@ -57,23 +60,66 @@ class Runner
     {
         //修改当前runner状态
         $this->status = self::STATUS_RUNNING;
-        while ($this->examinationChain->valid()) {
-            $this->executeExamination($this->examinationChain->dequeue());
+        foreach ($this->examinationChain as $examination) {
+            $this->executeExamination($examination);
         }
         //执行结束，状态置为waiting
         $this->status = self::STATUS_WAITING;
     }
 
     /**
+     * 获取当前runner工作状态
+     * @return int
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * 获取测试链
+     * @return ExaminationChain
+     */
+    public function getExaminationChain()
+    {
+        return $this->examinationChain;
+    }
+
+    /**
+     * 获取http请求客户端
+     * @return Client
+     */
+    public function getHttpClient()
+    {
+        return $this->httpClient;
+    }
+
+    /**
+     * 获取截取的参数
+     * @return ArrayCache
+     */
+    public function getArguments()
+    {
+        return $this->arguments;
+    }
+
+    /**
      * 执行测试
      * @param Examination $examination
+     * @return bool
      */
     function executeExamination(Examination $examination)
     {
-        $response = $this->requestApi($examination->getApi());
+        try {
+            $response = $this->requestApi($examination->getApi());
+        } catch (\Exception $e) {
+            //如果接口请求的过程中出现异常，则终止测试过程
+            $examination->executed(Examination::STATUS_INTERRUPT);
+            $examination->getReport()->write('exception', $e);
+            return false;
+        }
         $examination->getReport()->write('response', $response);
-        $examination->setIsExecuted(true);
-        $this->runAssertions($examination);
+        $this->runAssertions($examination, $response);
     }
 
     /**
@@ -86,16 +132,60 @@ class Runner
         if ($auth = $api->getAuth()) {
             $options['auth'] = $auth;
         }
-        return $this->httpClient->request($api->getRequestMethod(), $api->getUrl(), $options);
+        //预先替换掉参数里的所有变量，注意如果有变量被声明单没有替换的话会终止
+        $method = $this->processValue($api->getMethod());
+        $url = $this->processValue(strval($api->getUrl()));
+        $options = $this->processOptions($options);
+        return $this->httpClient->request($method, $url, $options);
     }
 
-    protected function runAssertions(Examination $examination)
+    /**
+     * 执行测试任务所有的断言
+     * @param Examination $examination
+     * @param Response $response
+     */
+    protected function runAssertions(Examination $examination, Response $response)
     {
-        
+        $executedResult = true;
+        foreach ($examination->getAssertions() as $assertion) {
+            if (!$assertion->execute($response)) {
+                $executedResult = false;
+            }
+        }
+        $examination->executed($executedResult ? Examination::STATUS_SUCCESS : Examination::STATUS_FAILED);
     }
 
-    protected function extractParameters($path)
+    /**
+     * 处理options
+     * @param $options
+     * @return array
+     */
+    protected function processOptions(array $options)
     {
-
+        $processedOptions = [];
+        foreach ($options as $key => $option) {
+            $processedOptions[$key] = is_array($option) ?
+                $this->processOptions($option)
+                : $this->processValue($option);
+        }
+        return $processedOptions;
+    }
+    /**
+     * 替换参数里的变量
+     * @param $value
+     * @return mixed
+     */
+    protected function processValue($value)
+    {
+        if (is_scalar($value)) {
+            return  preg_replace_callback('#\{([a-zA-Z0-9_,]*)\}#i', function ($matches) {
+                if (!isset($this->arguments[$matches[1]])) {
+                    throw new RuntimeException("The variable [$matches[1]] does not exists");
+                }
+                return $this->arguments[$matches[1]];
+            }, $value);
+        } elseif (is_array($value)) {
+            return call_user_func_array([$this, 'processValue'], $value);
+        }
     }
 }

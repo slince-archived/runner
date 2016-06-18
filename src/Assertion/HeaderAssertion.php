@@ -6,7 +6,6 @@
 namespace Slince\Runner\Assertion;
 
 use GuzzleHttp\Psr7\Response;
-use Slince\Runner\Exception\InvalidArgumentException;
 
 class HeaderAssertion extends AbstractAssertion
 {
@@ -28,6 +27,26 @@ class HeaderAssertion extends AbstractAssertion
     }
 
     /**
+     * 获取header line
+     * @param $header
+     * @return string
+     */
+    function getHeaderLine($header)
+    {
+        return $this->response->getHeaderLine($header);
+    }
+
+    /**
+     * 获取header
+     * @param $header
+     * @return array
+     */
+    function getHeader($header)
+    {
+        return $this->response->getHeader($header);
+    }
+
+    /**
      * 是否存在header
      * @param $header
      * @return bool
@@ -38,12 +57,36 @@ class HeaderAssertion extends AbstractAssertion
     }
 
     /**
-     * 获取header line
+     * 判断指定header的值
      * @param $header
-     * @return string
+     * @param $value
+     * @return bool
      */
-    function getHeaderLine($header)
+    function headerEqual($header, $value)
     {
-        return $this->response->getHeaderLine($header);
+        return $this->getHeaderLine($header) == $value;
+    }
+
+    /**
+     * header符合某个正则规则
+     * @param $header
+     * @param $pattern
+     * @return mixed
+     */
+    function headerRegex($header, $pattern)
+    {
+        return preg_match("#{$pattern}#", $this->getHeaderLine($header));
+    }
+
+    /**
+     * 判断某个header是否存在指定的值
+     * @param $header
+     * @param array $values
+     * @return bool
+     */
+    function headerHasValues($header, array $values)
+    {
+        $headerValues = $this->getHeader($header);
+        return empty(array_diff($values, $headerValues));
     }
 }

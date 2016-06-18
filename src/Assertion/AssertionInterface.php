@@ -9,5 +9,16 @@ use GuzzleHttp\Psr7\Response;
 
 interface AssertionInterface
 {
-    function execute(Response $response);
+    /**
+     * 设置response
+     * @param Response $response
+     * @return mixed
+     */
+    function setResponse(Response $response);
+
+    /**
+     * 获取response
+     * @return Response
+     */
+    function getResponse();
 }
