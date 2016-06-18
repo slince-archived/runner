@@ -6,6 +6,7 @@
 namespace Slince\Runner;
 
 use GuzzleHttp\Client;
+use Slince\Cache\ArrayCache;
 
 class Runner
 {
@@ -38,9 +39,15 @@ class Runner
      */
     protected $status = self::STATUS_WAITING;
 
+    /**
+     * @var ArrayCache
+     */
+    protected $arguments;
+
     function __construct(ExaminationChain $examinationChain = null)
     {
         $this->examinationChain = $examinationChain;
+        $this->arguments = new ArrayCache();
     }
 
     /**
@@ -85,5 +92,10 @@ class Runner
     protected function runAssertions(Examination $examination)
     {
         
+    }
+
+    protected function extractParameters($path)
+    {
+
     }
 }
