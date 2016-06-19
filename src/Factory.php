@@ -40,9 +40,9 @@ class Factory
      * @param array $assertions
      * @return Examination
      */
-    static function createExamination(Api $api, array $assertions = [])
+    static function createExamination(Api $api, array $assertions = [], $id = null)
     {
-        return new Examination($api, $assertions);
+        return new Examination($api, $assertions, $id);
     }
 
     /**

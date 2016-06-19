@@ -7,12 +7,20 @@ namespace Slince\Runner\Command;
 
 use Slince\Config\Config;
 use Slince\Event\Dispatcher;
+use Slince\Event\Event;
+use Slince\Runner\Assertion;
+use Slince\Runner\Assertion\ResponseAssertion;
+use Slince\Runner\Assertion\HeaderAssertion;
+use Slince\Runner\Assertion\BodyAssertion;
+use Slince\Runner\Examination;
+use Slince\Runner\ExaminationChain;
 use Slince\Runner\Exception\RuntimeException;
 use Slince\Runner\Factory;
 use Slince\Runner\Runner;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
+use PHPExcel;
 
 class GoCommand extends Command
 {
@@ -45,31 +53,44 @@ class GoCommand extends Command
         $this->author = $this->config->get('author');
         $runner = $this->buildRunnerTask();
         $this->bindEventsForUi($runner, $output);
+        $runner->run();
     }
 
+    /**
+     * 绑定事件
+     * @param Runner $runner
+     * @param OutputInterface $output
+     */
     protected function bindEventsForUi(Runner $runner, OutputInterface $output)
     {
         $chain = $runner->getExaminationChain();
         $progressBar = new ProgressBar($output, count($chain));
-        $progressBar->start();
         $dispatcher = $runner->getDispatcher();
         $dispatcher->bind(Runner::EVENT_RUN, function() use ($output, $progressBar){
-            $output->writeln("测试工作启动，将要执行{$progressBar->getMaxSteps()}个任务");
+            $output->writeln("Runner started and will be performed {$progressBar->getMaxSteps()} tasks");
+            $output->write(PHP_EOL);
+            $progressBar->start();
         });
         //执行新的测试任务
-        $dispatcher->bind(Runner::EVENT_EXAMINATION_EXECUTE, function() use($output, $progressBar){
-
+        $dispatcher->bind(Runner::EVENT_EXAMINATION_EXECUTE, function(Event $event) use($output, $progressBar){
+            $examination = $event->getArgument('examination');
+            $examination->getReport()->write('_beginTime', time());
         });
         //测试任务执行完毕
-        $dispatcher->bind(Runner::EVENT_EXAMINATION_EXECUTE, function() use($output, $progressBar){
+        $dispatcher->bind(Runner::EVENT_EXAMINATION_EXECUTE, function(Event $event) use($output, $progressBar){
+            $examination = $event->getArgument('examination');
+            $examination->getReport()->write('_endTime', time());
+            $consume = time() - $examination->getReport()->read('_beginTime');
+            $examination->getReport()->write('consume', $consume);
             $progressBar->advance(1);
         });
         $dispatcher->bind(Runner::EVENT_FINISH, function() use ($output, $progressBar){
             $progressBar->finish();
-            $output->writeln("测试结束，正在生成测试报告");
+            $output->writeln(PHP_EOL);
+            $output->writeln("Runner stop,Generating test report");
         });
         $dispatcher->bind(Runner::EVENT_FINISH, function() use ($runner){
-            $this->generateReport($runner);
+            $this->makeReport($runner);
         });
     }
 
@@ -77,11 +98,73 @@ class GoCommand extends Command
      * 生成测试报告
      * @param Runner $runner
      */
-    protected function generateReport(Runner $runner)
+    protected function makeReport(Runner $runner)
     {
-        file_put_contents(getcwd() . "/report", '测试ok');
+        $excel = new PHPExcel();
+        $sheet = $excel->setActiveSheetIndex(0)
+            ->setCellValue('A1', 'ID')
+            ->setCellValue('B1', 'Url地址')
+            ->setCellValue('C1', '请求方法')
+            ->setCellValue('D1', '耗时')
+            ->setCellValue('E1', '测试结果')
+            ->setCellValue('F1', '备注');
+        foreach ($this->extractDataFromChain($runner->getExaminationChain()) as $key => $data) {
+            $key += 2;
+            $sheet->setCellValue("A{$key}", $data['id'])
+                ->setCellValue("B{$key}", $data['url'])
+                ->setCellValue("C{$key}", $data['method'])
+                ->setCellValue("D{$key}", $data['consume'])
+                ->setCellValue("E{$key}", $data['status'])
+                ->setCellValue("F{$key}", $data['remark']);
+        }
+
+        $writer = \PHPExcel_IOFactory::createWriter($excel, 'Excel2007');
+        $filename = getcwd() . DIRECTORY_SEPARATOR . 'report.xlsx';
+        if (file_exists($filename)) {
+            $filename = str_replace('.xlsx', time() . '.xlsx', $filename);
+        }
+        $writer->save($filename);
     }
 
+    /**
+     * 提取报告数据
+     * @param ExaminationChain $examinationChain
+     * @return array
+     */
+    protected function extractDataFromChain(ExaminationChain $examinationChain)
+    {
+        $datas = [];
+        foreach ($examinationChain as $examination) {
+            $data = [
+                'id' => $examination->getId(),
+                'url' => $examination->getApi()->getUrl(),
+                'method' => $examination->getApi()->getMethod(),
+                'consume' => $examination->getReport()->read('consume'),
+                'status' => $this->getStatusText($examination->getStatus()),
+            ];
+            if ($examination->getStatus() == Examination::STATUS_INTERRUPT) {
+                $data['remark'] = $examination->getReport()->read('exception')->getMessage();
+            }
+            $datas[] = $data;
+        }
+        return $datas;
+    }
+
+    /**
+     * 获取状态描述
+     * @param $status
+     * @return string
+     */
+    protected function getStatusText($status)
+    {
+        static $texts = [
+            Examination::STATUS_SUCCESS => '成功',
+            Examination::STATUS_FAILED => '失败',
+            Examination::STATUS_INTERRUPT => '中断',
+            Examination::STATUS_WAITING => '等待'
+        ];
+        return isset($texts[$status]) ? $texts[$status] : '未知';
+    }
     /**
      * 读取配置文件
      * @param $configFile
@@ -93,10 +176,60 @@ class GoCommand extends Command
         return $config->load($configFile);
     }
 
+    /**
+     * 创建runner
+     * @return Runner
+     */
     protected function buildRunnerTask()
     {
         $runner = Factory::create();
         $chain = $runner->getExaminationChain();
+        foreach ($this->config['requests'] as $request) {
+            $api = Factory::createApi($request['url'], $request['method'],
+                isset($request['auth']) ? $request['auth'] : [],
+                isset($request['timeout']) ? $request['timeout'] : 0,
+                isset($request['followRedirect']) ? $request['followRedirect'] : false,
+                isset($request['headers']) ? $request['headers'] : [],
+                isset($request['cookies']) ? $request['cookies'] : [],
+                isset($request['enableCookie']) ? $request['enableCookie'] : false,
+                isset($request['cert']) ? $request['cert'] : false
+            );
+            $assertions = [];
+            foreach ($request['assertions'] as $type => $assertionConfigs) {
+                $assertions += $this->createAssertions($type, $assertionConfigs);
+            }
+            $chain->enqueue(Factory::createExamination($api, $assertions, isset($request['id']) ? $request['id'] : null));
+        }
         return $runner;
+    }
+
+    /**
+     * 根绝配置创建assertion对象
+     * @param $type
+     * @param array $assertionConfigs
+     * @return array
+     */
+    protected function createAssertions($type, array $assertionConfigs)
+    {
+        //找到assertion class
+        switch ($type) {
+            case 'response':
+                $assertionClass = '\Slince\Runner\Assertion\ResponseAssertion';
+                break;
+            case 'header':
+                $assertionClass = '\Slince\Runner\Assertion\HeaderAssertion';
+                break;
+            case 'body':
+                $assertionClass = '\Slince\Runner\Assertion\BodyAssertion';
+                break;
+        }
+        $assertions = [];
+        foreach ($assertionConfigs as $assertionMethod => $arguments) {
+            if (!is_array($arguments)) {
+                $arguments = [$arguments];
+            }
+            $assertions[] = new Assertion(new $assertionClass(), $assertionMethod, $arguments);
+        }
+        return $assertions;
     }
 }

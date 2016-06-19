@@ -5,7 +5,7 @@
  */
 namespace Slince\Runner;
 
-use Webmozart\Assert\Assert;
+use Cake\Utility\Text;
 
 class Examination
 {
@@ -65,11 +65,15 @@ class Examination
      */
     protected $status = self::STATUS_WAITING;
 
-    function __construct(Api $api, array $assertions = [])
+    function __construct(Api $api, array $assertions = [], $id = null)
     {
         $this->api = $api;
         $this->assertions = $assertions;
         $this->report = new Report();
+        if (is_null($id)) {
+            $id = Text::uuid();
+        }
+        $this->id = $id;
     }
 
     /**
@@ -97,6 +101,10 @@ class Examination
         return $this->assertions;
     }
 
+    /**
+     * 设置断言
+     * @param array $assertions
+     */
     public function setAssertions(array $assertions)
     {
         $this->assertions = $assertions;
@@ -137,13 +145,26 @@ class Examination
         return $this->status != self::STATUS_WAITING;
     }
 
+    /**
+     * 设置逮捕获参数
+     * @param $catch
+     */
     public function setCatch($catch)
     {
         $this->catch = $catch;
     }
-    
+
+    /**
+     * 获取捕获参数
+     * @return array
+     */
     public function getCatch()
     {
         return $this->catch;
+    }
+
+    public function getId()
+    {
+        return $this->id;
     }
 }

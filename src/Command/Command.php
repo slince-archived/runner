@@ -6,6 +6,7 @@
 namespace Slince\Runner\Command;
 
 use Symfony\Component\Console\Command\Command as BaseCommand;
+use Symfony\Component\Console\Input\InputOption;
 
 class Command extends BaseCommand
 {
@@ -23,7 +24,9 @@ class Command extends BaseCommand
 
     function configure()
     {
-        $this->addOption(self::CONFIG_OPTION, null, InputOption::VALUE_OPTIONAL, '配置文件', getcwd() . self::CONFIG_FILE);
+        $this->addOption(self::CONFIG_OPTION, null, InputOption::VALUE_OPTIONAL, '配置文件',
+            getcwd() . DIRECTORY_SEPARATOR . self::CONFIG_FILE
+        );
     }
 
     function validateConfigFile($configFile)

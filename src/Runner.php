@@ -191,7 +191,7 @@ class Runner
             'headers' => $api->getHeaders(),
             'cert' => $api->getCert(),
             'allow_redirects' => $api->getFollowRedirect(),
-            'cookies' => CookieJar::fromArray($api->getCookies())
+            'cookies' => CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost())
         ];
         if ($auth = $api->getAuth()) {
             $options['auth'] = $auth;

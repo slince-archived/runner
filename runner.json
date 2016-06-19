@@ -1,0 +1,71 @@
+{
+  "name": "Api Test",
+  "author": "Author",
+  "requests": [
+    {
+      "id": "album",
+      "url": "http://www.qimuyu.com",
+      "method": "GET",
+      "options": {
+        "query": {
+          "id": 2
+        },
+        "followRedirect": true,
+        "auth": ["username", "password"],
+        "cert": "/path/to/cert.pem",
+        "timeout": "30",
+        "headers": {
+          "User-Agent": "Slince-Runner",
+          "Accept": "application/json",
+          "X-Foo": ["Bar", "Baz"]
+        },
+        "enableCookie": "true",
+        "cookies": {
+          "foo": "bar"
+        }
+      },
+      "assertions": {
+        "body": {
+          "isJson": "true",
+          "isXml":"false",
+          "hasParameter": ["name", "age"],
+          "parameterEqual": {
+            "name": "Steven"
+          },
+          "parameterRegex": {
+            "name": "^Steven"
+          }
+        },
+        "header": {
+          "hasHeader": ["Content-Length"],
+          "headerEqual": {
+            "Content-Length": "3000"
+          },
+          "headerRegex": {
+            "Content-Length": "\\d+"
+          },
+          "headerHasParameters": {
+            "Accept-Languages": ["zh_CN", "en_US"]
+          }
+        },
+        "response": {
+          "statusCode": ["200", "201"],
+          "isOk": "true",
+          "isNotFound": "false",
+          "isXXX": "true"
+        }
+      },
+      "catch": {
+        "body": {
+          "path.parameter": "foo"
+        },
+        "header": {
+          "path.parameter": "bar"
+        }
+      }
+    }
+  ],
+  "default": {
+    "foo": "bar"
+  }
+}
