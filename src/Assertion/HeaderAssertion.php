@@ -22,20 +22,11 @@ class HeaderAssertion extends AbstractAssertion
     }
 
     /**
-     * 获取状态码
-     * @return mixed
-     */
-    function getStatusCode()
-    {
-        return $this->getStatusCode();
-    }
-
-    /**
      * 获取header line
      * @param $header
      * @return string
      */
-    function getHeaderLine($header)
+    protected function getHeaderLine($header)
     {
         return $this->response->getHeaderLine($header);
     }
@@ -45,7 +36,7 @@ class HeaderAssertion extends AbstractAssertion
      * @param $header
      * @return array
      */
-    function getHeader($header)
+    protected function getHeader($header)
     {
         return $this->response->getHeader($header);
     }

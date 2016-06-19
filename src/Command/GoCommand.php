@@ -140,6 +140,7 @@ class GoCommand extends Command
     {
         $datas = [];
         foreach ($examinationChain as $examination) {
+            $response = $examination->getReport()->read('response');
             $data = [
                 'id' => $examination->getId(),
                 'url' => $examination->getApi()->getUrl(),
@@ -148,7 +149,7 @@ class GoCommand extends Command
                 'status' => $this->getStatusText($examination->getStatus()),
                 'remark' => '',
                 'assertion' => $this->reduceAssertionsResults($examination->getAssertions()),
-                'response' => $examination->getReport()->read('response')->getBody()
+                'response' => $response ? $response->getBody() : ''
             ];
             if ($examination->getStatus() == Examination::STATUS_INTERRUPT) {
                 $data['remark'] = $examination->getReport()->read('exception')->getMessage();

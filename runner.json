@@ -10,7 +10,9 @@
         "headers": {
           "appver": "1.5.2"
         },
-        "proxy": "tcp://127.0.0.1:8888"
+        "cookies": {
+          "foo": "bar"
+        }
       },
       "assertions": {
         "response": {

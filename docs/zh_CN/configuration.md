@@ -27,6 +27,7 @@
                 "cookies": { //自定义cookie
                     "foo": "bar"
                 },
+               "proxy": "tcp://127.0.0.1:8888" //代理地址，如果需要配合抓包工具使用，可以使用本参数设置
             },
             "assertions": { //断言
                 "body": { //关于body的断言

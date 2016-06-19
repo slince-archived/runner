@@ -40,29 +40,6 @@ class BodyAssertion extends AbstractAssertion
     }
 
     /**
-     * 是否是json格式
-     * @param $result
-     * @return bool
-     */
-    function isJson($result)
-    {
-        json_decode($this->body);
-        return $result == (json_last_error() == JSON_ERROR_NONE);
-    }
-
-    /**
-     * 是否是xml
-     * @param $result
-     * @return bool
-     */
-    function isXml($result)
-    {
-        $parser = xml_parser_create();
-        xml_parse($parser, $this->body);
-        return $result == (xml_get_error_code($parser) == XML_ERROR_NONE);
-    }
-
-    /**
      * 格式化为json返回
      * @return mixed
      */
@@ -86,6 +63,29 @@ class BodyAssertion extends AbstractAssertion
     {
         return Hash::get($this->json(), $name);
     }
+    /**
+     * 是否是json格式
+     * @param $result
+     * @return bool
+     */
+    function isJson($result)
+    {
+        json_decode($this->body);
+        return $result == (json_last_error() == JSON_ERROR_NONE);
+    }
+
+    /**
+     * 是否是xml
+     * @param $result
+     * @return bool
+     */
+    function isXml($result)
+    {
+        $parser = xml_parser_create();
+        xml_parse($parser, $this->body);
+        return $result == (xml_get_error_code($parser) == XML_ERROR_NONE);
+    }
+    
     /**
      * 判断存在指定参数
      * @param $name
