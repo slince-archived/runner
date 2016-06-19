@@ -19,6 +19,12 @@ class Api
     protected $method = 'GET';
 
     /**
+     * query参数
+     * @var array
+     */
+    protected $query = [];
+
+    /**
      * auth验证
      * @var array
      */
@@ -54,6 +60,11 @@ class Api
     protected $enableCookie = false;
 
     /**
+     * 代理
+     * @var mixed
+     */
+    protected $proxy = null;
+    /**
      * 自定义证书
      * @var string
      */
@@ -62,22 +73,26 @@ class Api
     function __construct(
         $url,
         $method = 'GET',
+        array $query = [],
         array $auth = [],
         $timeout = 0,
         $followRedirect = false,
         array $headers = [],
         array $cookies = [],
         $enableCookie = false,
+        $proxy = null,
         $cert = null
     ) {
         $this->url = Url::createFromUrl($url);
         $this->method = $method;
+        $this->query = $query;
         $this->auth = $auth;
         $this->timeout = $timeout;
         $this->followRedirect = $followRedirect;
         $this->headers = $headers;
         $this->cookies = $cookies;
         $this->enableCookie = $enableCookie;
+        $this->proxy = $proxy;
         $this->cert = $cert;
     }
 
@@ -104,6 +119,16 @@ class Api
         return $this->method;
     }
 
+    public function setQuery($query)
+    {
+        $this->query = $query;
+    }
+
+    public function getQuery()
+    {
+        return $this->query;
+    }
+    
     public function setAuth($auth)
     {
         $this->auth = $auth;
@@ -155,6 +180,16 @@ class Api
     public function getTimeout()
     {
         return $this->timeout;
+    }
+
+    public function setProxy($proxy)
+    {
+        $this->proxy = $proxy;
+    }
+
+    public function getProxy()
+    {
+        return $this->proxy;
     }
 
     public function setCert($cert)

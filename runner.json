@@ -1,72 +1,133 @@
 {
-  "name": "Api Test",
-  "author": "Author",
+  "name": "NetEase Music Api Test",
+  "author": "Tao",
   "requests": [
     {
       "id": "album",
-      "url": "http://www.qimuyu.com",
+      "url": "http://music.163.com/api/album/32311/",
       "method": "GET",
       "options": {
-        "query": {
-          "id": 2
+        "headers": {
+          "appver": "1.5.2"
         },
-        "followRedirect": true,
-        "auth": ["username", "password"],
-        "cert": "/path/to/cert.pem",
-        "timeout": "30",
+        "proxy": "tcp://127.0.0.1:8888"
+      },
+      "assertions": {
+        "response": {
+          "isOk": true,
+          "isNotFound": false
+        },
+        "body": {
+          "isJson":true,
+          "hasParameter": "album",
+          "hasParameters": ["album.alias", "album.artist.id"]
+        }
+      }
+    },
+    {
+      "id": "album",
+      "url": "http://music.163.com/api/album/32311/",
+      "method": "GET",
+      "options": {
         "headers": {
           "User-Agent": "Slince-Runner",
           "Accept": "application/json",
-          "X-Foo": ["Bar", "Baz"]
-        },
-        "enableCookie": "true",
-        "cookies": {
-          "foo": "bar"
+          "appver": "1.5.2"
         }
       },
       "assertions": {
-        "body": {
-          "isJson": false,
-          "isXml": false,
-          "hasParameters": "name",
-          "hasParameters": ["name", "age"],
-          "parameterEqual": {
-            "name": "Steven"
-          },
-          "parameterRegex": {
-            "name": "^Steven"
-          }
-        },
-        "header": {
-          "hasHeader": ["Content-Length"],
-          "headerEqual": {
-            "Content-Length": "3000"
-          },
-          "headerRegex": {
-            "Content-Length": "\\d+"
-          },
-          "headerHasParameters": {
-            "Accept-Languages": ["zh_CN", "en_US"]
-          }
-        },
         "response": {
-          "statusCode": ["200", "201"],
           "isOk": true,
-          "isNotFound": false,
-          "isXXX": true
+          "isNotFound": false
+        },
+        "body": {
+          "isJson":false
+        }
+      }
+    },
+    {
+      "id": "album",
+      "url": "http://music.163.com/api/album/32311/",
+      "method": "GET",
+      "options": {
+        "headers": {
+          "User-Agent": "Slince-Runner",
+          "Accept": "application/json",
+          "appver": "1.5.2"
         }
       },
-      "catch": {
-        "body": {
-          "path.parameter": "foo"
+      "assertions": {
+        "response": {
+          "isOk": true,
+          "isNotFound": false
         },
-        "header": {
-          "path.parameter": "bar"
+        "body": {
+          "isJson":false
+        }
+      }
+    },
+    {
+      "id": "album",
+      "url": "http://music.163.com/api/album/32311/",
+      "method": "GET",
+      "options": {
+        "headers": {
+          "User-Agent": "Slince-Runner",
+          "Accept": "application/json",
+          "appver": "1.5.2"
+        }
+      },
+      "assertions": {
+        "response": {
+          "isOk": true,
+          "isNotFound": false
+        },
+        "body": {
+          "isJson":false
+        }
+      }
+    },
+    {
+      "id": "album",
+      "url": "http://music.163.com/api/album/32311/",
+      "method": "GET",
+      "options": {
+        "headers": {
+          "User-Agent": "Slince-Runner",
+          "Accept": "application/json",
+          "appver": "1.5.2"
+        }
+      },
+      "assertions": {
+        "response": {
+          "isOk": true,
+          "isNotFound": false
+        },
+        "body": {
+          "isJson":false
+        }
+      }
+    },
+    {
+      "id": "album",
+      "url": "http://music.163.com/api/album/32311/",
+      "method": "GET",
+      "options": {
+        "headers": {
+          "User-Agent": "Slince-Runner",
+          "Accept": "application/json",
+          "appver": "1.5.2"
+        }
+      },
+      "assertions": {
+        "response": {
+          "isOk": true,
+          "isNotFound": false
+        },
+        "body": {
+          "isJson":false
         }
       }
     }
-  ],
-  "default": {
-    "foo": "bar"
-  }
+  ]
 }

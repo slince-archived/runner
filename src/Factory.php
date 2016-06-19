@@ -11,27 +11,32 @@ class Factory
      * 创建api
      * @param $url
      * @param string $method
+     * @param array $query
      * @param array $auth
      * @param int $timeout
      * @param bool $followRedirect
      * @param array $headers
      * @param array $cookies
      * @param bool $enableCookie
+     * @param mixed $proxy
      * @param string $cert
      * @return Api
      */
     static function createApi(
         $url,
         $method = 'GET',
+        array $query = [],
         array $auth = [],
         $timeout = 0,
         $followRedirect = false,
         array $headers = [],
         array $cookies = [],
         $enableCookie = false,
+        $proxy = null,
         $cert = null)
     {
-        return new Api($url, $method, $auth, $timeout, $followRedirect, $headers, $cookies, $enableCookie, $cert);
+        return new Api($url, $method, $query, $auth, $timeout, $followRedirect,
+            $headers, $cookies, $enableCookie, $proxy, $cert);
     }
 
     /**

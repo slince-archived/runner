@@ -67,6 +67,7 @@ class GoCommand extends Command
         $progressBar = new ProgressBar($output, count($chain));
         $dispatcher = $runner->getDispatcher();
         $dispatcher->bind(Runner::EVENT_RUN, function() use ($output, $progressBar){
+            $output->writeln("Hi {$this->author}!");
             $output->writeln("Runner started and will be performed {$progressBar->getMaxSteps()} tasks");
             $output->write(PHP_EOL);
             $progressBar->start();
@@ -74,13 +75,13 @@ class GoCommand extends Command
         //执行新的测试任务
         $dispatcher->bind(Runner::EVENT_EXAMINATION_EXECUTE, function(Event $event) use($output, $progressBar){
             $examination = $event->getArgument('examination');
-            $examination->getReport()->write('_beginTime', time());
+            $examination->getReport()->write('_beginTime', microtime(true));
         });
         //测试任务执行完毕
         $dispatcher->bind(Runner::EVENT_EXAMINATION_EXECUTE, function(Event $event) use($output, $progressBar){
             $examination = $event->getArgument('examination');
-            $examination->getReport()->write('_endTime', time());
-            $consume = time() - $examination->getReport()->read('_beginTime');
+            $examination->getReport()->write('_endTime', microtime(true));
+            $consume = microtime(true) - $examination->getReport()->read('_beginTime');
             $examination->getReport()->write('consume', $consume);
             $progressBar->advance(1);
         });
@@ -107,7 +108,9 @@ class GoCommand extends Command
             ->setCellValue('C1', '请求方法')
             ->setCellValue('D1', '耗时')
             ->setCellValue('E1', '测试结果')
-            ->setCellValue('F1', '备注');
+            ->setCellValue('F1', '备注')
+            ->setCellValue('G1', '断言结果')
+            ->setCellValue('H1', '响应');
         foreach ($this->extractDataFromChain($runner->getExaminationChain()) as $key => $data) {
             $key += 2;
             $sheet->setCellValue("A{$key}", $data['id'])
@@ -115,7 +118,9 @@ class GoCommand extends Command
                 ->setCellValue("C{$key}", $data['method'])
                 ->setCellValue("D{$key}", $data['consume'])
                 ->setCellValue("E{$key}", $data['status'])
-                ->setCellValue("F{$key}", $data['remark']);
+                ->setCellValue("F{$key}", $data['remark'])
+                ->setCellValue("G{$key}", $data['assertion'])
+                ->setCellValue("H{$key}", $data['response']);
         }
 
         $writer = \PHPExcel_IOFactory::createWriter($excel, 'Excel2007');
@@ -141,11 +146,14 @@ class GoCommand extends Command
                 'method' => $examination->getApi()->getMethod(),
                 'consume' => $examination->getReport()->read('consume'),
                 'status' => $this->getStatusText($examination->getStatus()),
+                'remark' => '',
+                'assertion' => $this->reduceAssertionsResults($examination->getAssertions()),
+                'response' => $examination->getReport()->read('response')->getBody()
             ];
             if ($examination->getStatus() == Examination::STATUS_INTERRUPT) {
                 $data['remark'] = $examination->getReport()->read('exception')->getMessage();
             } elseif ($examination->getStatus() == Examination::STATUS_FAILED) {
-                $data['remark'] = $this->reduceAssertionsResults($examination->getAssertions());
+                $data['remark'] = $this->reduceAssertionsMessage($examination->getAssertions());
             } else {
                 $data['remark'] = null;
             }
@@ -154,6 +162,18 @@ class GoCommand extends Command
         return $datas;
     }
 
+    /**
+     * 将所有断言中的message迭代出来
+     * @param array $assertions
+     */
+    protected function reduceAssertionsMessage(array $assertions)
+    {
+        $messages = [];
+        foreach ($assertions as $assertion) {
+            $messages[] = $assertion->getMessage();
+        }
+        return implode(';', array_filter($messages));
+    }
     /**
      * 将断言结果迭代成可存储的字符串
      * @param array $assertions
@@ -209,17 +229,19 @@ class GoCommand extends Command
         $chain = $runner->getExaminationChain();
         foreach ($this->config['requests'] as $request) {
             $api = Factory::createApi($request['url'], $request['method'],
-                isset($request['auth']) ? $request['auth'] : [],
-                isset($request['timeout']) ? $request['timeout'] : 0,
-                isset($request['followRedirect']) ? $request['followRedirect'] : false,
-                isset($request['headers']) ? $request['headers'] : [],
-                isset($request['cookies']) ? $request['cookies'] : [],
-                isset($request['enableCookie']) ? $request['enableCookie'] : false,
-                isset($request['cert']) ? $request['cert'] : null
+                isset($request['options']['query']) ? $request['options']['query'] : [],
+                isset($request['options']['auth']) ? $request['options']['auth'] : [],
+                isset($request['options']['timeout']) ? $request['options']['timeout'] : 0,
+                isset($request['options']['followRedirect']) ? $request['options']['followRedirect'] : false,
+                isset($request['options']['headers']) ? $request['options']['headers'] : [],
+                isset($request['options']['cookies']) ? $request['options']['cookies'] : [],
+                isset($request['options']['enableCookie']) ? $request['options']['enableCookie'] : false,
+                isset($request['options']['proxy']) ? $request['options']['proxy'] : null,
+                isset($request['options']['cert']) ? $request['options']['cert'] : null
             );
             $assertions = [];
             foreach ($request['assertions'] as $type => $assertionConfigs) {
-                $assertions += $this->createAssertions($type, $assertionConfigs);
+                $assertions = array_merge($assertions, $this->createAssertions($type, $assertionConfigs));
             }
             $chain->enqueue(Factory::createExamination($api, $assertions, isset($request['id']) ? $request['id'] : null));
         }

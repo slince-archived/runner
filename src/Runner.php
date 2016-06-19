@@ -187,8 +187,10 @@ class Runner
     {
         //支持的option
         $options = [
+            'query' => $api->getQuery(),
             'timeout' => $api->getTimeout(),
             'headers' => $api->getHeaders(),
+            'proxy' => $api->getProxy(),
             'cert' => $api->getCert(),
             'allow_redirects' => $api->getFollowRedirect(),
             'cookies' => CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost())
