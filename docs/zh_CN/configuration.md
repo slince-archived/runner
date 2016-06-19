@@ -29,7 +29,7 @@
                     "foo": "bar"
                 },
             },
-            assertions: [ //断言
+            assertions: { //断言
                 body: { //关于body的断言
                     isJson: true, //是否是json格式
                     isXml:false, //是否是xml格式
@@ -53,7 +53,15 @@
                     isNotFound: false,
                     isXXX: true
                 }
-            ]
+            },
+            catch {
+                body: {
+                    "path.parameter": "foo"
+                }
+                header: {
+                    "path.parameter": "bar"
+                }
+            }
             ...
         }
     ],

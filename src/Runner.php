@@ -5,9 +5,13 @@
  */
 namespace Slince\Runner;
 
+use Cake\Utility\Hash;
 use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Psr7\Response;
 use Slince\Cache\ArrayCache;
+use Slince\Event\Dispatcher;
+use Slince\Event\Event;
 use Slince\Runner\Exception\RuntimeException;
 
 class Runner
@@ -23,6 +27,30 @@ class Runner
      * @var int
      */
     const STATUS_RUNNING = 1;
+
+    /**
+     * runner启动事件
+     * @var string
+     */
+    const EVENT_RUN = 'run';
+
+    /**
+     * runner结束事件
+     * @var string
+     */
+    const EVENT_FINISH = 'finish';
+
+    /**
+     * 测试项开始执行测试事件
+     * @var string
+     */
+    const EVENT_EXAMINATION_EXECUTE = 'examination.execute';
+
+    /**
+     * 测试项开始执行测试结束事件
+     * @var string
+     */
+    const EVENT_EXAMINATION_EXECUTED = 'examination.executed';
 
     /**
      * 执行的测试链，一个runner只能执行一条测试链
@@ -46,11 +74,18 @@ class Runner
      */
     protected $arguments;
 
+    /**
+     * dispatcher
+     * @var Dispatcher
+     */
+    protected $dispatcher;
+
     function __construct(ExaminationChain $examinationChain = null)
     {
         $this->examinationChain = $examinationChain;
         $this->arguments = new ArrayCache();
         $this->httpClient = new Client();
+        $this->dispatcher = new Dispatcher();
     }
 
     /**
@@ -58,6 +93,7 @@ class Runner
      */
     function run()
     {
+        $this->dispatcher->dispatch(self::EVENT_RUN, new Event(self::EVENT_RUN, $this));
         //修改当前runner状态
         $this->status = self::STATUS_RUNNING;
         foreach ($this->examinationChain as $examination) {
@@ -65,6 +101,7 @@ class Runner
         }
         //执行结束，状态置为waiting
         $this->status = self::STATUS_WAITING;
+        $this->dispatcher->dispatch(self::EVENT_FINISH, new Event(self::EVENT_FINISH, $this));
     }
 
     /**
@@ -95,6 +132,15 @@ class Runner
     }
 
     /**
+     * 获取事件调度器
+     * @return Dispatcher
+     */
+    public function getDispatcher()
+    {
+        return $this->dispatcher;
+    }
+
+    /**
      * 获取截取的参数
      * @return ArrayCache
      */
@@ -110,6 +156,11 @@ class Runner
      */
     function executeExamination(Examination $examination)
     {
+        $this->dispatcher->dispatch(self::EVENT_EXAMINATION_EXECUTE, new Event(
+            self::EVENT_EXAMINATION_EXECUTE, $this, [
+                'examination' => $examination
+            ])
+        );
         try {
             $response = $this->requestApi($examination->getApi());
         } catch (\Exception $e) {
@@ -119,7 +170,13 @@ class Runner
             return false;
         }
         $examination->getReport()->write('response', $response);
+        $this->extractArguments($examination, $response);
         $this->runAssertions($examination, $response);
+        $this->dispatcher->dispatch(self::EVENT_EXAMINATION_EXECUTED, new Event(
+                self::EVENT_EXAMINATION_EXECUTED, $this, [
+                'examination' => $examination
+            ])
+        );
     }
 
     /**
@@ -128,7 +185,14 @@ class Runner
      */
     protected function requestApi(Api $api)
     {
-        $options = [];
+        //支持的option
+        $options = [
+            'timeout' => $api->getTimeout(),
+            'headers' => $api->getHeaders(),
+            'cert' => $api->getCert(),
+            'allow_redirects' => $api->getFollowRedirect(),
+            'cookies' => CookieJar::fromArray($api->getCookies())
+        ];
         if ($auth = $api->getAuth()) {
             $options['auth'] = $auth;
         }
@@ -156,6 +220,51 @@ class Runner
     }
 
     /**
+     * 从响应中提取需要catch的参数
+     * @param Examination $examination
+     * @param Response $response
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    protected function extractArguments(Examination $examination, Response $response)
+    {
+        $catch = $examination->getCatch();
+        if (empty($catch)) {
+            return true;
+        }
+        //从header里面提取
+        if (isset($catch['header']) && is_array($catch['header'])) {
+            foreach ($catch['header'] as $parameter => $name) {
+                if (is_numeric($parameter)) {
+                    $newArgumentName = $name;
+                    $oldArgumentName = $name;
+                } else {
+                    $newArgumentName = $name;
+                    $oldArgumentName = $parameter;
+                }
+                $this->arguments->set($newArgumentName, $response->getHeaderLine($oldArgumentName));
+            }
+        }
+        //从body里面提取
+        if (isset($catch['body']) && is_array($catch['body'])) {
+            $json = json_decode($response->getBody(), true);
+            if (json_last_error() != JSON_ERROR_NONE) {
+                throw new InvalidArgumentException(sprintf("Invalid Json Format"));
+            }
+            foreach ($catch['body'] as $parameter => $name) {
+                if (is_numeric($parameter)) {
+                    $newArgumentName = $name;
+                    $oldArgumentName = $name;
+                } else {
+                    $newArgumentName = $name;
+                    $oldArgumentName = $parameter;
+                }
+                $this->arguments->set($newArgumentName, Hash::get($json, $oldArgumentName));
+            }
+        }
+        return true;
+    }
+        /**
      * 处理options
      * @param $options
      * @return array

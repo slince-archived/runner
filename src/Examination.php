@@ -50,6 +50,11 @@ class Examination
     protected $assertions = [];
 
     /**
+     * 响应中需要捕获的参数
+     * @var array
+     */
+    protected $catch = [];
+    /**
      * @var Report
      */
     protected $report;
@@ -60,9 +65,10 @@ class Examination
      */
     protected $status = self::STATUS_WAITING;
 
-    function __construct(Api $api)
+    function __construct(Api $api, array $assertions = [])
     {
         $this->api = $api;
+        $this->assertions = $assertions;
         $this->report = new Report();
     }
 
@@ -129,5 +135,15 @@ class Examination
     function getIsExecuted()
     {
         return $this->status != self::STATUS_WAITING;
+    }
+
+    public function setCatch($catch)
+    {
+        $this->catch = $catch;
+    }
+    
+    public function getCatch()
+    {
+        return $this->catch;
     }
 }

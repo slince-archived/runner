@@ -64,6 +64,7 @@ class Api
         $method = 'GET',
         array $auth = [],
         $timeout = 0,
+        $followRedirect = false,
         array $headers = [],
         array $cookies = [],
         $enableCookie = false,
@@ -73,6 +74,7 @@ class Api
         $this->method = $method;
         $this->auth = $auth;
         $this->timeout = $timeout;
+        $this->followRedirect = $followRedirect;
         $this->headers = $headers;
         $this->cookies = $cookies;
         $this->enableCookie = $enableCookie;
@@ -163,5 +165,15 @@ class Api
     public function getCert()
     {
         return $this->cert;
+    }
+
+    public function setFollowRedirect($followRedirect)
+    {
+        $this->followRedirect = $followRedirect;
+    }
+
+    public function getFollowRedirect()
+    {
+        return $this->followRedirect;
     }
 }
