@@ -26,9 +26,10 @@
       },
       "assertions": {
         "body": {
-          "isJson": "true",
-          "isXml":"false",
-          "hasParameter": ["name", "age"],
+          "isJson": false,
+          "isXml": false,
+          "hasParameters": "name",
+          "hasParameters": ["name", "age"],
           "parameterEqual": {
             "name": "Steven"
           },
@@ -50,9 +51,9 @@
         },
         "response": {
           "statusCode": ["200", "201"],
-          "isOk": "true",
-          "isNotFound": "false",
-          "isXXX": "true"
+          "isOk": true,
+          "isNotFound": false,
+          "isXXX": true
         }
       },
       "catch": {

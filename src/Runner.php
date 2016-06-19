@@ -295,6 +295,8 @@ class Runner
             }, $value);
         } elseif (is_array($value)) {
             return call_user_func_array([$this, 'processValue'], $value);
+        } else {
+            return $value;
         }
     }
 }

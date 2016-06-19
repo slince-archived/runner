@@ -57,7 +57,7 @@ class Api
      * 自定义证书
      * @var string
      */
-    protected $cert = '';
+    protected $cert = null;
 
     function __construct(
         $url,
@@ -68,7 +68,7 @@ class Api
         array $headers = [],
         array $cookies = [],
         $enableCookie = false,
-        $cert = ''
+        $cert = null
     ) {
         $this->url = Url::createFromUrl($url);
         $this->method = $method;

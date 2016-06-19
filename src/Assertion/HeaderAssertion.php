@@ -11,7 +11,11 @@ class HeaderAssertion extends AbstractAssertion
 {
     protected $headers;
 
-    function execute(Response $response)
+    /**
+     * 设置response
+     * @param Response $response
+     */
+    function setResponse(Response $response)
     {
         parent::execute($response);
         $this->headers = $response->getHeaders();

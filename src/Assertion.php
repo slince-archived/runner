@@ -82,8 +82,26 @@ class Assertion
      * 获取断言执行结果
      * @return bool
      */
-    function getExecutedResult()
+    public function getExecutedResult()
     {
        return $this->executedResult;
+    }
+
+    /**
+     * 获取断言对应的方法
+     * @return string
+     */
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
+    /**
+     * 获取传给断言的参数
+     * @return array
+     */
+    public function getParameters()
+    {
+        return $this->parameters;
     }
 }

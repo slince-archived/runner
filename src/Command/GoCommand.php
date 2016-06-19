@@ -144,10 +144,33 @@ class GoCommand extends Command
             ];
             if ($examination->getStatus() == Examination::STATUS_INTERRUPT) {
                 $data['remark'] = $examination->getReport()->read('exception')->getMessage();
+            } elseif ($examination->getStatus() == Examination::STATUS_FAILED) {
+                $data['remark'] = $this->reduceAssertionsResults($examination->getAssertions());
+            } else {
+                $data['remark'] = null;
             }
             $datas[] = $data;
         }
         return $datas;
+    }
+
+    /**
+     * 将断言结果迭代成可存储的字符串
+     * @param array $assertions
+     * @return mixed
+     */
+    protected function reduceAssertionsResults(array $assertions)
+    {
+        $results = [];
+        foreach ($assertions as $assertion) {
+            $result = implode(':', [
+                $assertion->getMethod(),
+                print_r($assertion->getParameters(), true),
+                $assertion->getExecutedResult() ? 'true' : 'false'
+            ]);
+            $results[] = $result;
+        }
+        return implode(PHP_EOL, $results);
     }
 
     /**
@@ -192,7 +215,7 @@ class GoCommand extends Command
                 isset($request['headers']) ? $request['headers'] : [],
                 isset($request['cookies']) ? $request['cookies'] : [],
                 isset($request['enableCookie']) ? $request['enableCookie'] : false,
-                isset($request['cert']) ? $request['cert'] : false
+                isset($request['cert']) ? $request['cert'] : null
             );
             $assertions = [];
             foreach ($request['assertions'] as $type => $assertionConfigs) {
@@ -225,10 +248,15 @@ class GoCommand extends Command
         }
         $assertions = [];
         foreach ($assertionConfigs as $assertionMethod => $arguments) {
-            if (!is_array($arguments)) {
-                $arguments = [$arguments];
+            if (is_array($arguments)) {
+                if (!is_numeric(key($arguments))) {
+                    foreach ($arguments as $name => $argument) {
+                        $assertions[] = new Assertion(new $assertionClass(), $assertionMethod, [$name, $argument]);
+                    }
+                    continue;
+                }
             }
-            $assertions[] = new Assertion(new $assertionClass(), $assertionMethod, $arguments);
+            $assertions[] = new Assertion(new $assertionClass(), $assertionMethod, [$arguments]);
         }
         return $assertions;
     }

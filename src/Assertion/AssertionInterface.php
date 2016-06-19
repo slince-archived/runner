@@ -12,7 +12,6 @@ interface AssertionInterface
     /**
      * 设置response
      * @param Response $response
-     * @return mixed
      */
     function setResponse(Response $response);
 

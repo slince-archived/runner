@@ -17,11 +17,19 @@ abstract class AbstractAssertion implements AssertionInterface
      */
     protected $response;
 
+    /**
+     * 设置response
+     * @param Response $response
+     */
     function setResponse(Response $response)
     {
         $this->response = $response;
     }
 
+    /**
+     * 获取response
+     * @return Response
+     */
     function getResponse()
     {
         return $this->response;

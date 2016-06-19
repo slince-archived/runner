@@ -29,7 +29,7 @@ class Factory
         array $headers = [],
         array $cookies = [],
         $enableCookie = false,
-        $cert = '')
+        $cert = null)
     {
         return new Api($url, $method, $auth, $timeout, $followRedirect, $headers, $cookies, $enableCookie, $cert);
     }

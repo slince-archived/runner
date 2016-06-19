@@ -21,50 +21,56 @@ class BodyAssertion extends AbstractAssertion
     protected $json;
 
     /**
-     * 执行测试
+     * 设置response
      * @param Response $response
      */
-    function execute(Response $response)
+    function setResponse(Response $response)
     {
-        parent::execute($response);
+        parent::setResponse($response);
         $this->body = $response->getBody();
     }
 
+    /**
+     * 获取body
+     * @return mixed
+     */
     function getBody()
     {
         return $this->body;
     }
 
     /**
-     * body是否是合法的json格式
+     * 是否是json格式
+     * @param $result
      * @return bool
      */
-    function isJson()
+    function isJson($result)
     {
         json_decode($this->body);
-        return json_last_error() == JSON_ERROR_NONE;
+        return $result == (json_last_error() == JSON_ERROR_NONE);
     }
 
     /**
      * 是否是xml
+     * @param $result
      * @return bool
      */
-    function isXml()
+    function isXml($result)
     {
         $parser = xml_parser_create();
         xml_parse($parser, $this->body);
-        return xml_get_error_code() == XML_ERROR_NONE;
+        return $result == (xml_get_error_code($parser) == XML_ERROR_NONE);
     }
 
     /**
      * 格式化为json返回
      * @return mixed
      */
-    function json()
+    protected function json()
     {
         if (empty($this->json)) {
             $this->json = json_decode($this->body, true);
-            if (json_last_error == JSON_ERROR_NONE) {
+            if (json_last_error() == JSON_ERROR_NONE) {
                 throw new InvalidArgumentException(sprintf("Invalid Json Format"));
             }
         }
@@ -76,7 +82,7 @@ class BodyAssertion extends AbstractAssertion
      * @param $name
      * @return mixed
      */
-    function getParameter($name)
+    protected function getParameter($name)
     {
         return Hash::get($this->json(), $name);
     }
@@ -88,6 +94,21 @@ class BodyAssertion extends AbstractAssertion
     function hasParameter($name)
     {
         return Hash::get($this->json(), $name, false) != false;
+    }
+
+    /**
+     * 批量判断存在指定参数
+     * @param $names
+     * @return bool
+     */
+    function hasParameters($names)
+    {
+        foreach ($names as $name) {
+            if (!$this->hasParameter($name)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
