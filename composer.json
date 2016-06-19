@@ -22,9 +22,8 @@
         "slince/config": "*@dev",
         "symfony/filesystem": "~3.0",
         "symfony/console": "~3.0",
-        "webmozart/assert": "*",
-        "cakephp/utility": "*",
-        "phpoffice/phpexcel": "*"
+        "cakephp/utility": "~3.0",
+        "phpoffice/phpexcel": "~1.8"
     },
     "bin": [
         "runner"
