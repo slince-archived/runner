@@ -12,6 +12,7 @@ class Factory
      * @param $url
      * @param string $method
      * @param array $query
+     * @param array $formParams
      * @param array $auth
      * @param int $timeout
      * @param bool $followRedirect
@@ -26,6 +27,8 @@ class Factory
         $url,
         $method = 'GET',
         array $query = [],
+        array $posts = [],
+        array $files = [],
         array $auth = [],
         $timeout = 0,
         $followRedirect = false,
@@ -35,7 +38,7 @@ class Factory
         $proxy = null,
         $cert = null)
     {
-        return new Api($url, $method, $query, $auth, $timeout, $followRedirect,
+        return new Api($url, $method, $query, $posts, $files, $auth, $timeout, $followRedirect,
             $headers, $cookies, $enableCookie, $proxy, $cert);
     }
 

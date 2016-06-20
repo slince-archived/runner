@@ -232,6 +232,8 @@ class GoCommand extends Command
         foreach ($this->config['requests'] as $request) {
             $api = Factory::createApi($request['url'], $request['method'],
                 isset($request['options']['query']) ? $request['options']['query'] : [],
+                isset($request['options']['posts']) ? $request['options']['posts'] : [],
+                isset($request['options']['files']) ? $request['options']['files'] : [],
                 isset($request['options']['auth']) ? $request['options']['auth'] : [],
                 isset($request['options']['timeout']) ? $request['options']['timeout'] : 0,
                 isset($request['options']['followRedirect']) ? $request['options']['followRedirect'] : false,

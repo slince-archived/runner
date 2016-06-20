@@ -12,6 +12,7 @@ use GuzzleHttp\Psr7\Response;
 use Slince\Cache\ArrayCache;
 use Slince\Event\Dispatcher;
 use Slince\Event\Event;
+use Slince\Runner\Exception\InvalidArgumentException;
 use Slince\Runner\Exception\RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -207,13 +208,28 @@ class Runner
             parse_str($api->getUrl()->getQuery(), $urlQuery);
             $options['query'] = array_merge($urlQuery, $query);
         }
+        //post参数
+        if ($posts = $api->getPosts()) {
+            $options['form_params'] = $posts;
+        }
+        //文件上传
+        if ($files = $api->getFiles()) {
+            $multipartParams = [];
+            if (!empty($options['form_params'])) {
+                $multipartParams = $this->convertFormParamsToMultipart($options['form_params']);
+            }
+            $multipartParams = array_merge($multipartParams, $this->convertFilesToMultipart($files));
+            $options['multipart'] = $multipartParams;
+            unset($options['form_params']);
+        }
+        //如果证书文件路径不是绝对路径则从工作目录下查找
         if ($cert = $api->getCert()) {
-            //如果证书文件路径不是绝对路径则从工作目录下查找
             if (!$this->filesystem->isAbsolutePath($cert)) {
                 $cert =  realpath(getcwd() .DIRECTORY_SEPARATOR . $cert);
             }
             $options['cert'] = $cert;
         }
+        //cookies
         if ($cookies = $api->getCookies()) {
             $options['cookies'] = CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost());
         }
@@ -224,6 +240,46 @@ class Runner
         return $this->httpClient->request($method, $url, $options);
     }
 
+    /**
+     * 转换form params成multipart格式
+     * @param $formParams
+     * @return array
+     */
+    protected function convertFormParamsToMultipart($formParams)
+    {
+        $posts = [];
+        foreach ($formParams as $name => $value) {
+            $posts[] = [
+                'name' => $name,
+                'contents' => $value
+            ];
+        }
+        return $posts;
+    }
+
+
+    /**
+     * 转换files到multipart格式
+     * @param $files
+     * @return array
+     */
+    protected function convertFilesToMultipart($files)
+    {
+        $posts = [];
+        foreach ($files as $name => $file) {
+            if (!$this->filesystem->isAbsolutePath($file)) {
+                $file = getcwd() . DIRECTORY_SEPARATOR . $file;
+            }
+            if (!file_exists($file)) {
+                throw new InvalidArgumentException();
+            }
+            $posts[] = [
+                'name' => $name,
+                'contents' => fopen($file, 'r')
+            ];
+        }
+        return $posts;
+    }
     /**
      * 执行测试任务所有的断言
      * @param Examination $examination
