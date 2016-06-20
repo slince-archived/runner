@@ -257,7 +257,6 @@ class Runner
         return $posts;
     }
 
-
     /**
      * 转换files到multipart格式
      * @param $files
