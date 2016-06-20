@@ -17,9 +17,9 @@
     "require": {
         "php": ">=5.5.9",
         "guzzlehttp/guzzle": "~6.2",
-        "slince/event": "*",
-        "slince/cache": "*@dev",
-        "slince/config": "*@dev",
+        "slince/event": "~1.0",
+        "slince/cache": "~1.0",
+        "slince/config": "~1.0",
         "symfony/filesystem": "~3.0",
         "symfony/console": "~3.0",
         "cakephp/utility": "~3.0",
