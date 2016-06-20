@@ -187,17 +187,26 @@ class Runner
     {
         //支持的option
         $options = [
-            'query' => $api->getQuery(),
             'timeout' => $api->getTimeout(),
             'headers' => $api->getHeaders(),
             'proxy' => $api->getProxy(),
-            'cert' => $api->getCert(),
-            'allow_redirects' => $api->getFollowRedirect(),
-            'cookies' => CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost())
+            'allow_redirects' => $api->getFollowRedirect()
         ];
         if ($auth = $api->getAuth()) {
             $options['auth'] = $auth;
         }
+        //需要兼容url中带有query参数的情况
+        if ($query = $api->getQuery()) {
+            parse_str($api->getUrl()->getQuery(), $urlQuery);
+            $options['query'] = array_merge($urlQuery, $query);
+        }
+        if ($cert = $api->getCert()) {
+            $options['cert'] = realpath(getcwd() .DIRECTORY_SEPARATOR . $cert);
+        }
+        if ($cookies = $api->getCookies()) {
+            $options['cookies'] = CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost());
+        }
+        print_r($options);
         //预先替换掉参数里的所有变量，注意如果有变量被声明单没有替换的话会终止
         $method = $this->processValue($api->getMethod());
         $url = $this->processValue(strval($api->getUrl()));

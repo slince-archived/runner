@@ -166,6 +166,7 @@ class GoCommand extends Command
     /**
      * 将所有断言中的message迭代出来
      * @param array $assertions
+     * @return string
      */
     protected function reduceAssertionsMessage(array $assertions)
     {
@@ -178,7 +179,7 @@ class GoCommand extends Command
     /**
      * 将断言结果迭代成可存储的字符串
      * @param array $assertions
-     * @return mixed
+     * @return string
      */
     protected function reduceAssertionsResults(array $assertions)
     {
