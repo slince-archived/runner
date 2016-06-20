@@ -13,6 +13,7 @@ use Slince\Cache\ArrayCache;
 use Slince\Event\Dispatcher;
 use Slince\Event\Event;
 use Slince\Runner\Exception\RuntimeException;
+use Symfony\Component\Filesystem\Filesystem;
 
 class Runner
 {
@@ -80,12 +81,18 @@ class Runner
      */
     protected $dispatcher;
 
+    /**
+     * @var Filesystem
+     */
+    protected $filesystem;
+
     function __construct(ExaminationChain $examinationChain = null)
     {
         $this->examinationChain = $examinationChain;
         $this->arguments = new ArrayCache();
         $this->httpClient = new Client();
         $this->dispatcher = new Dispatcher();
+        $this->filesystem = new Filesystem();
     }
 
     /**
@@ -201,7 +208,11 @@ class Runner
             $options['query'] = array_merge($urlQuery, $query);
         }
         if ($cert = $api->getCert()) {
-            $options['cert'] = realpath(getcwd() .DIRECTORY_SEPARATOR . $cert);
+            //如果证书文件路径不是绝对路径则从工作目录下查找
+            if (!$this->filesystem->isAbsolutePath($cert)) {
+                $cert =  realpath(getcwd() .DIRECTORY_SEPARATOR . $cert);
+            }
+            $options['cert'] = $cert;
         }
         if ($cookies = $api->getCookies()) {
             $options['cookies'] = CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost());
