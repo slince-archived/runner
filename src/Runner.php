@@ -217,7 +217,6 @@ class Runner
         if ($cookies = $api->getCookies()) {
             $options['cookies'] = CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost());
         }
-        print_r($options);
         //预先替换掉参数里的所有变量，注意如果有变量被声明单没有替换的话会终止
         $method = $this->processValue($api->getMethod());
         $url = $this->processValue(strval($api->getUrl()));
