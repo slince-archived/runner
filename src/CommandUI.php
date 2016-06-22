@@ -3,7 +3,6 @@
  * slince template collector library
  * @author Tao <taosikai@yeah.net>
  */
-
 namespace Slince\Runner;
 
 use Slince\Runner\Command\GoCommand;
