@@ -87,6 +87,11 @@ class Runner
      */
     protected $filesystem;
 
+    /**
+     * @var CookieContainer
+     */
+    protected $cookieContainer;
+
     function __construct(ExaminationChain $examinationChain = null)
     {
         $this->examinationChain = $examinationChain;
@@ -94,6 +99,7 @@ class Runner
         $this->httpClient = new Client();
         $this->dispatcher = new Dispatcher();
         $this->filesystem = new Filesystem();
+        $this->cookieContainer = new CookieContainer();
     }
 
     /**
@@ -164,11 +170,13 @@ class Runner
      */
     function executeExamination(Examination $examination)
     {
+        //触发测试开始事件
         $this->dispatcher->dispatch(self::EVENT_EXAMINATION_EXECUTE, new Event(
             self::EVENT_EXAMINATION_EXECUTE, $this, [
                 'examination' => $examination
             ])
         );
+        //请求api
         try {
             $response = $this->requestApi($examination->getApi());
         } catch (\Exception $e) {
@@ -178,8 +186,11 @@ class Runner
             return false;
         }
         $examination->getReport()->write('response', $response);
+        //提取捕获参数
         $this->extractArguments($examination, $response);
+        //执行断言
         $this->runAssertions($examination, $response);
+        //触发测试结束事件
         $this->dispatcher->dispatch(self::EVENT_EXAMINATION_EXECUTED, new Event(
                 self::EVENT_EXAMINATION_EXECUTED, $this, [
                 'examination' => $examination
@@ -188,10 +199,25 @@ class Runner
     }
 
     /**
+     * 请求api
      * @param Api $api
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
     protected function requestApi(Api $api)
+    {
+        //预先替换掉参数里的所有变量，注意如果有变量被声明单没有替换的话会终止
+        $method = $this->processValue($api->getMethod());
+        $url = $this->processValue(strval($api->getUrl()));
+        $options = $this->processOptions($this->getRequestOptions($api));
+        return $this->httpClient->request($method, $url, $options);
+    }
+
+    /**
+     * 获取请求options
+     * @param Api $api
+     * @return array
+     */
+    protected function getRequestOptions(Api $api)
     {
         //支持的option
         $options = [
@@ -233,13 +259,8 @@ class Runner
         if ($cookies = $api->getCookies()) {
             $options['cookies'] = CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost());
         }
-        //预先替换掉参数里的所有变量，注意如果有变量被声明单没有替换的话会终止
-        $method = $this->processValue($api->getMethod());
-        $url = $this->processValue(strval($api->getUrl()));
-        $options = $this->processOptions($options);
-        return $this->httpClient->request($method, $url, $options);
+        return $options;
     }
-
     /**
      * 转换form params成multipart格式
      * @param $formParams
@@ -340,7 +361,8 @@ class Runner
         }
         return true;
     }
-        /**
+
+    /**
      * 处理options
      * @param $options
      * @return array

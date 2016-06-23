@@ -5,17 +5,36 @@
  */
 namespace Slince\Runner;
 
-
 class Cookie
 {
+    /**
+     * cookie名称
+     * @var string
+     */
     protected $name;
 
+    /**
+     * cookie值
+     * @var string
+     */
     protected $value;
 
+    /**
+     * cookie过期时间
+     * @var string
+     */
     protected $expires;
 
+    /**
+     * 有效路径
+     * @var string
+     */
     protected $path;
 
+    /**
+     * 域名
+     * @var string
+     */
     protected $domain;
 
     function __construct($name, $value, $expires = 0, $path = '/', $domain = '')
@@ -25,6 +44,23 @@ class Cookie
         $this->expires = $expires;
         $this->path = $path;
         $this->domain = $domain;
+    }
+
+    /**
+     * 创建cookie
+     * @param array $parameters
+     * @return static
+     */
+    static function createFromArray(array $parameters)
+    {
+        $defaultParameters = [
+            'expires' => '',
+            'path' => '',
+            'domain' => ''
+        ];
+        $parameters = array_merge($defaultParameters, $parameters);
+        return new static($parameters['name'], $parameters['value'],
+            $parameters['expires'], $parameters['path'], $parameters['domain']);
     }
 
     /**
