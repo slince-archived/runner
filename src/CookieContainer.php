@@ -47,6 +47,19 @@ class CookieContainer
         }
     }
 
+
+    /**
+     * 批量设置cookie
+     * @param array $cookies
+     */
+    function setCookies(array $cookies = [])
+    {
+        foreach ($cookies as $cookie)
+        {
+            $this->set($cookie['name'], $cookie['value'], $cookie);
+        }
+    }
+
     /**
      * 批量添加cookies
      * @param array $cookies
@@ -79,6 +92,14 @@ class CookieContainer
     }
 
     /**
+     * @return array
+     */
+    public function getCookies()
+    {
+        return $this->cookies;
+    }
+
+    /**
      * 获取符合这个规则
      * @param Url $url
      * @return array
@@ -102,9 +123,12 @@ class CookieContainer
      */
     protected function isComfortableForUrl(Cookie $cookie, Url $url)
     {
-        if (strstr($cookie->getPath(), $url->getPath()) !== false) {
+        return $this->matchPath($cookie->getPath(), $url->getPath());
+    }
 
-        }
-        return true;
+    protected function matchPath($cookiePath, $requestPath)
+    {
+        return $cookiePath == '/' || ($cookiePath == $requestPath) || (strpos($cookiePath, $requestPath) === 0);
+
     }
 }

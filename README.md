@@ -33,8 +33,16 @@ runner
 - 自定义header，headers
 自定义header比较容易实现，只要传递键值对即可，具体实例看参考文档
 
-- 设置cookie
-同header一样，cookies字段传递键值对即可
+- 设置cookie,cookies
+cookies字段接受数组，每个数组元素是一个cookie对象，cookie对象支持的属性有name,value,expires,path和domian
+
+```
+"cookies": [
+  {"name": "foo","value": "bar"}
+]
+```
+cookie的支持是默认开启的，如果你想关闭cookie，需要设置enableCookie字段为false，同时也要从配置里移除cookies字段；
+因为如果使用cookies字段则意味着你需要cookie
 
 ### 测试断言
 

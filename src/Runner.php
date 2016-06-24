@@ -8,6 +8,7 @@ namespace Slince\Runner;
 use Cake\Utility\Hash;
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Cookie\SetCookie;
 use GuzzleHttp\Psr7\Response;
 use Slince\Cache\ArrayCache;
 use Slince\Event\Dispatcher;
@@ -91,6 +92,11 @@ class Runner
      * @var CookieContainer
      */
     protected $cookieContainer;
+    /**
+     * cookies
+     * @var CookieJar
+     */
+    protected $cookies;
 
     function __construct(ExaminationChain $examinationChain = null)
     {
@@ -100,6 +106,7 @@ class Runner
         $this->dispatcher = new Dispatcher();
         $this->filesystem = new Filesystem();
         $this->cookieContainer = new CookieContainer();
+        $this->cookies = new CookieJar();
     }
 
     /**
@@ -255,12 +262,36 @@ class Runner
             }
             $options['cert'] = $cert;
         }
-        //cookies
-        if ($cookies = $api->getCookies()) {
-            $options['cookies'] = CookieJar::fromArray($api->getCookies(), $api->getUrl()->getHost());
+        //如果开启cookie或者有自定义cookie都视为需要cookie支持
+        if ($api->getEnableCookie() || $cookies = $api->getCookies()) {
+            $options['cookies'] = $this->getCookies($api);
         }
         return $options;
     }
+
+    /**
+     * 将自定义的cookie追加进请求
+     * @param Api $api
+     * @return CookieJar
+     */
+    protected function getCookies(Api $api)
+    {
+        if ($cookies = $api->getCookies()) {
+            $this->cookieContainer->setCookies($cookies);
+        }
+        //将cookie自身的容器交还给guzzle
+        foreach ($this->cookieContainer->getCookies() as $cookie) {
+            $this->cookies->setCookie(new SetCookie([
+                'Name' => $cookie->getName(),
+                'Value' => $cookie->getValue(),
+                'Domain' => $cookie->getDomain() ?: $api->getUrl()->getHost(),
+                'Path' => $cookie->getPath(),
+                'Expires' => $cookie->getExpires()
+            ]));
+        }
+        return $this->cookies;
+    }
+
     /**
      * 转换form params成multipart格式
      * @param $formParams

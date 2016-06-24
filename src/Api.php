@@ -66,10 +66,10 @@ class Api
     protected $cookies = [];
 
     /**
-     * 是否开启cookie
+     * 是否开启cookie,默认开启
      * @var bool
      */
-    protected $enableCookie = false;
+    protected $enableCookie = true;
 
     /**
      * 代理

@@ -24,9 +24,9 @@
                     "X-Foo" => ["Bar", "Baz"]
                 ],
                 "enableCookie": "true", //是否启用cookie
-                "cookies": { //自定义cookie
-                    "foo": "bar"
-                },
+                "cookies": [
+                  {"name": "foo","value": "bar"}
+                ],
                 "posts": { //post参数，post请求时有效
                     "foo": "bar"
                 },

@@ -137,4 +137,16 @@ class BodyAssertion extends AbstractAssertion
         $parameter = $this->getParameter($name);
         return preg_match("#{$pattern}#", Hash::get($this->json(), $parameter));
     }
+
+    /**
+     * 字段类型
+     * @param $name
+     * @param $type
+     * @return boolean
+     */
+    function getType($name, $type)
+    {
+        $parameter = $this->getParameter($name);
+        return gettype($parameter) == $type;
+    }
 }

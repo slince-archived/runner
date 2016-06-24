@@ -37,7 +37,7 @@ class Cookie
      */
     protected $domain;
 
-    function __construct($name, $value, $expires = 0, $path = '/', $domain = '')
+    function __construct($name, $value, $expires = null, $path = '/', $domain = null)
     {
         $this->name = $name;
         $this->value = $value;
@@ -54,9 +54,9 @@ class Cookie
     static function createFromArray(array $parameters)
     {
         $defaultParameters = [
-            'expires' => '',
-            'path' => '',
-            'domain' => ''
+            'expires' => null,
+            'path' => '/',
+            'domain' => null
         ];
         $parameters = array_merge($defaultParameters, $parameters);
         return new static($parameters['name'], $parameters['value'],

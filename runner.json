@@ -10,9 +10,9 @@
         "headers": {
           "appver": "1.5.2"
         },
-        "cookies": {
-          "foo": "bar"
-        }
+        "cookies": [
+          {"name": "foo","value": "bar"}
+        ]
       },
       "assertions": {
         "response": {
