@@ -142,4 +142,13 @@ class Cookie
     {
         return $this->domain;
     }
+
+    /**
+     * cookie是否过期
+     * @return bool
+     */
+    function isValid()
+    {
+        return $this->expires > time();
+    }
 }

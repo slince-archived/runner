@@ -81,9 +81,30 @@ class CookieContainer
     /**
      * 获取符合这个规则
      * @param Url $url
+     * @return array
      */
     function getValidCookies(Url $url)
     {
-        
+        $cookies = [];
+        foreach ($this->cookies as $cookie) {
+            if ($cookie->isValid() && $this->isComfortableForUrl($cookie, $url)) {
+                $cookies[] = $cookie;
+            }
+        }
+        return $cookies;
+    }
+
+    /**
+     * 判断cookie是否与url适配
+     * @param Cookie $cookie
+     * @param Url $url
+     * @return bool
+     */
+    protected function isComfortableForUrl(Cookie $cookie, Url $url)
+    {
+        if (strstr($cookie->getPath(), $url->getPath()) !== false) {
+
+        }
+        return true;
     }
 }
