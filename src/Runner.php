@@ -322,7 +322,7 @@ class Runner
                 $file = getcwd() . DIRECTORY_SEPARATOR . $file;
             }
             if (!file_exists($file)) {
-                throw new InvalidArgumentException();
+                throw new InvalidArgumentException(sprintf("File [%s] does not exists", $file));
             }
             $posts[] = [
                 'name' => $name,

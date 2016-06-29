@@ -9,9 +9,6 @@ use Slince\Config\Config;
 use Slince\Event\Dispatcher;
 use Slince\Event\Event;
 use Slince\Runner\Assertion;
-use Slince\Runner\Assertion\ResponseAssertion;
-use Slince\Runner\Assertion\HeaderAssertion;
-use Slince\Runner\Assertion\BodyAssertion;
 use Slince\Runner\Examination;
 use Slince\Runner\ExaminationChain;
 use Slince\Runner\Exception\RuntimeException;
@@ -227,63 +224,6 @@ class GoCommand extends Command
      */
     protected function buildRunnerTask()
     {
-        $runner = Factory::create();
-        $chain = $runner->getExaminationChain();
-        foreach ($this->config['requests'] as $request) {
-            $api = Factory::createApi($request['url'], $request['method'],
-                isset($request['options']['query']) ? $request['options']['query'] : [],
-                isset($request['options']['posts']) ? $request['options']['posts'] : [],
-                isset($request['options']['files']) ? $request['options']['files'] : [],
-                isset($request['options']['auth']) ? $request['options']['auth'] : [],
-                isset($request['options']['timeout']) ? $request['options']['timeout'] : 0,
-                isset($request['options']['followRedirect']) ? $request['options']['followRedirect'] : false,
-                isset($request['options']['headers']) ? $request['options']['headers'] : [],
-                isset($request['options']['cookies']) ? $request['options']['cookies'] : [],
-                isset($request['options']['enableCookie']) ? $request['options']['enableCookie'] : false,
-                isset($request['options']['proxy']) ? $request['options']['proxy'] : null,
-                isset($request['options']['cert']) ? $request['options']['cert'] : null
-            );
-            $assertions = [];
-            foreach ($request['assertions'] as $type => $assertionConfigs) {
-                $assertions = array_merge($assertions, $this->createAssertions($type, $assertionConfigs));
-            }
-            $chain->enqueue(Factory::createExamination($api, $assertions, isset($request['id']) ? $request['id'] : null));
-        }
-        return $runner;
-    }
-
-    /**
-     * 根绝配置创建assertion对象
-     * @param $type
-     * @param array $assertionConfigs
-     * @return array
-     */
-    protected function createAssertions($type, array $assertionConfigs)
-    {
-        //找到assertion class
-        switch ($type) {
-            case 'response':
-                $assertionClass = '\Slince\Runner\Assertion\ResponseAssertion';
-                break;
-            case 'header':
-                $assertionClass = '\Slince\Runner\Assertion\HeaderAssertion';
-                break;
-            case 'body':
-                $assertionClass = '\Slince\Runner\Assertion\BodyAssertion';
-                break;
-        }
-        $assertions = [];
-        foreach ($assertionConfigs as $assertionMethod => $arguments) {
-            if (is_array($arguments)) {
-                if (!is_numeric(key($arguments))) {
-                    foreach ($arguments as $name => $argument) {
-                        $assertions[] = new Assertion(new $assertionClass(), $assertionMethod, [$name, $argument]);
-                    }
-                    continue;
-                }
-            }
-            $assertions[] = new Assertion(new $assertionClass(), $assertionMethod, [$arguments]);
-        }
-        return $assertions;
+        return Factory::createFromConfig($this->config);
     }
 }
