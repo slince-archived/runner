@@ -1,6 +1,6 @@
 # 接口自动化测试工具
 
-基于php的接口自动化测试工具
+基于php的接口自动化测试工具；鉴于配置文件的局限性如果你有更复杂的测试需求建议使用[Mechanic](https://github.com/slince/mechanic);
 
 ## 安装
 程序采用composer安装，如果您没有安装composer请先安装composer，参考链接
